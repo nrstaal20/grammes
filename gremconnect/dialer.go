@@ -20,7 +20,12 @@
 
 package gremconnect
 
-import "time"
+import (
+	"net/http"
+	"time"
+
+	"github.com/gorilla/websocket"
+)
 
 // Dialer will be used to dial in a connection
 // between the client and gremlin server without
@@ -50,7 +55,17 @@ type Dialer interface {
 	SetPingInterval(interval time.Duration)
 	SetWritingWait(interval time.Duration)
 	SetReadingWait(interval time.Duration)
+	SetRequestHeaders(requestHeaders http.Header)
+	SetDialerCfg(d websocket.Dialer)
 }
+
+var (
+	DefaultDialerCfg = websocket.Dialer{
+		WriteBufferSize:  512 * 1024,
+		ReadBufferSize:   512 * 1024,
+		HandshakeTimeout: 5 * time.Second, // Timeout or else we'll hang forever and never fail on bad hosts.
+	}
+)
 
 // NewWebSocketDialer returns a new WebSocket dialer to use when
 // establishing a connection to the Gremlin server. This
@@ -65,5 +80,6 @@ func NewWebSocketDialer(address string) Dialer {
 		connected:    false,
 		address:      address,
 		Quit:         make(chan struct{}),
+		dialerCfg:    DefaultDialerCfg,
 	}
 }

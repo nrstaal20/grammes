@@ -12,3 +12,5 @@ n3data
 portainer-data
 scripts/db
 scripts/log
+
+.idea

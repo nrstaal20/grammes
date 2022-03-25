@@ -34,16 +34,18 @@ import (
 // to dial to the gremlin server and sustain
 // a stable connection by pinging it regularly.
 type WebSocket struct {
-	address      string
-	conn         *websocket.Conn
-	auth         *Auth
-	disposed     bool
-	connected    bool
-	pingInterval time.Duration
-	writingWait  time.Duration
-	readingWait  time.Duration
-	timeout      time.Duration
-	Quit         chan struct{}
+	address        string
+	conn           *websocket.Conn
+	auth           *Auth
+	disposed       bool
+	connected      bool
+	pingInterval   time.Duration
+	writingWait    time.Duration
+	readingWait    time.Duration
+	timeout        time.Duration
+	requestHeaders http.Header
+	dialerCfg      websocket.Dialer
+	Quit           chan struct{}
 
 	sync.RWMutex
 }
@@ -53,12 +55,6 @@ type WebSocket struct {
 // to the given address.
 func (ws *WebSocket) Connect() error {
 	var err error
-	dialer := websocket.Dialer{
-		WriteBufferSize:  1024 * 8, // Set up for large messages.
-		ReadBufferSize:   1024 * 8, // Set up for large messages.
-		HandshakeTimeout: 5 * time.Second,
-	}
-
 	// Check if the host address already has the proper
 	// /gremlin endpoint at the end of it. If it doesn't
 	// then concatenate it to the end of the string.
@@ -67,7 +63,7 @@ func (ws *WebSocket) Connect() error {
 		ws.address = ws.address + "/gremlin"
 	}
 
-	ws.conn, _, err = dialer.Dial(ws.address, http.Header{})
+	ws.conn, _, err = ws.dialerCfg.Dial(ws.address, ws.requestHeaders)
 
 	if err == nil {
 		ws.connected = true
@@ -199,4 +195,14 @@ func (ws *WebSocket) SetWritingWait(interval time.Duration) {
 // SetReadingWait sets how long the reading will wait
 func (ws *WebSocket) SetReadingWait(interval time.Duration) {
 	ws.readingWait = interval
+}
+
+// SetRequestHeaders set headers
+func (ws *WebSocket) SetRequestHeaders(requestHeaders http.Header) {
+	ws.requestHeaders = requestHeaders
+}
+
+// SetDialerCfg override default dialer cfg
+func (ws *WebSocket) SetDialerCfg(d websocket.Dialer) {
+	ws.dialerCfg = d
 }

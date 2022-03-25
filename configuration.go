@@ -21,8 +21,11 @@
 package grammes
 
 import (
+	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/websocket"
 
 	"github.com/northwesternmutual/grammes/logging"
 )
@@ -100,5 +103,17 @@ func WithWritingWait(interval time.Duration) ClientConfiguration {
 func WithReadingWait(interval time.Duration) ClientConfiguration {
 	return func(c *Client) {
 		c.conn.SetReadingWait(interval)
+	}
+}
+
+func WithRequestHeaders(requestHeaders http.Header) ClientConfiguration {
+	return func(c *Client) {
+		c.conn.SetRequestHeaders(requestHeaders)
+	}
+}
+
+func WithDialerCfg(d websocket.Dialer) ClientConfiguration {
+	return func(c *Client) {
+		c.conn.SetDialerCfg(d)
 	}
 }
