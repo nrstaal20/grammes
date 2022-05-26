@@ -22,6 +22,7 @@ package gremconnect
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -103,6 +104,13 @@ func (ws *WebSocket) Write(msg []byte) error {
 // from the established connection.
 func (ws *WebSocket) Read() (msg []byte, err error) {
 	_, msg, err = ws.conn.ReadMessage()
+	if err != nil {
+		// https://stackoverflow.com/questions/61108552/go-websocket-error-close-1006-abnormal-closure-unexpected-eof#:~:text=The%20error%20indicates%20that%20the,filter%20out%20expected%20close%20errors.
+		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+			log.Printf("error: %v", err)
+			err = nil
+		}
+	}
 	return
 }
 
